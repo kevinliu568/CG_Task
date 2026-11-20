@@ -1237,7 +1237,7 @@
   </div>
 </div>
 
-<!-- ===================== macOS 帳號登入與身分切換 Modal ===================== -->
+<!-- ===================== macOS 工作身分選擇 Modal（無密碼表單，避免防毒誤判） ===================== -->
 <div id="loginModal" class="fixed inset-0 z-[90] hidden items-center justify-center p-3 sm:p-6" style="background:rgba(0,0,0,.66);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)">
   <div class="w-full max-w-lg flex flex-col rounded-2xl overflow-hidden mac-window fade-in">
     <div class="px-4 sm:px-5 py-3 flex items-center justify-between mac-titlebar">
@@ -1247,8 +1247,8 @@
           <span class="mac-light minimize"></span>
           <span class="mac-light zoom"></span>
         </div>
-        <span class="code c-on">ACCOUNT</span>
-        <h3 class="font-bold text-[14px]">👤 帳號登入｜任務派遣中心</h3>
+        <span class="code c-on">PROFILE</span>
+        <h3 class="font-bold text-[14px]">👋 選擇您的工作身分｜任務派遣中心</h3>
       </div>
       <button id="loginCloseBtn" type="button" class="btn btn-sm hidden" onclick="closeLoginModal()">關閉</button>
     </div>
@@ -1259,30 +1259,29 @@
         <div class="flex items-center gap-3 min-w-0">
           <div class="mac-app-icon !w-10 !h-10 !text-base shrink-0">派</div>
           <div class="min-w-0">
-            <div class="font-bold text-sm">請選擇或輸入您的個人帳號登入</div>
-            <div class="text-[11px] muted">登入後系統上方將直接顯示您的名字，並自動篩選您的待接單任務</div>
+            <div class="font-bold text-sm">請點選或輸入您的姓名進入系統</div>
+            <div class="text-[11px] muted">設定後系統上方將直接顯示您的名字，並自動篩選您的待接單任務</div>
           </div>
         </div>
-        <button id="btnLogoutCurrent" type="button" class="btn btn-sm btn-danger hidden shrink-0" onclick="logoutUser()">🚪 登出</button>
+        <button id="btnLogoutCurrent" type="button" class="btn btn-sm btn-danger hidden shrink-0" onclick="logoutUser()">🔄 重選身分</button>
       </div>
 
-      <!-- 模式切換：同仁帳號 / 管理員登入 -->
+      <!-- 模式切換：團隊成員 / 主管管理 -->
       <div class="mac-seg-bar w-full grid grid-cols-2 text-center">
-        <button id="loginTabMember" type="button" class="tab active" onclick="switchLoginTab('member')">👤 同仁帳號登入</button>
-        <button id="loginTabAdmin" type="button" class="tab" onclick="switchLoginTab('admin')">👑 管理員登入</button>
+        <button id="loginTabMember" type="button" class="tab active" onclick="switchLoginTab('member')">👤 團隊成員</button>
+        <button id="loginTabAdmin" type="button" class="tab" onclick="switchLoginTab('admin')">👑 主管 / 派單管理</button>
       </div>
 
-      <!-- 面板 A：同仁帳號登入 -->
+      <!-- 面板 A：團隊成員選擇 -->
       <div id="loginPanelMember" class="space-y-3">
-        <!-- 搜尋或直接輸入姓名/帳號 -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div>
             <label class="label">您的姓名（顯示於系統上方）*</label>
-            <input id="loginMemberName" class="input" placeholder="點選下方名單，或直接輸入姓名…" oninput="filterLoginMembers()" />
+            <input id="loginMemberName" type="text" class="input" placeholder="點選下方名單，或直接輸入姓名…" oninput="filterLoginMembers()" />
           </div>
           <div>
-            <label class="label">個人帳號 / Email（選填，用於識別）</label>
-            <input id="loginMemberAccount" class="input mono" placeholder="例：name@company.com 或英文名" />
+            <label class="label">部門或英文名（選填）</label>
+            <input id="loginMemberAccount" type="text" class="input mono" placeholder="例：動畫組、Kevin" />
           </div>
         </div>
 
@@ -1295,20 +1294,20 @@
           <div id="loginMemberGrid" class="space-y-2.5 max-h-52 overflow-y-auto scroll-x pr-1"></div>
         </div>
 
-        <button type="button" class="btn btn-primary w-full py-2.5 text-sm" onclick="submitMemberLogin()">🔓 以此帳號登入並記住此裝置</button>
+        <button type="button" class="btn btn-primary w-full py-2.5 text-sm" onclick="submitMemberLogin()">✔ 確認身分並記住此裝置</button>
       </div>
 
-      <!-- 面板 B：管理員登入 -->
+      <!-- 面板 B：主管模式（純數字驗證碼，無 password 欄位） -->
       <div id="loginPanelAdmin" class="hidden space-y-3">
         <div>
-          <label class="label">管理員帳號 / Email</label>
-          <input id="loginAdminAccount" class="input mono" value="ljun0568@gmail.com" placeholder="ljun0568@gmail.com" />
+          <label class="label">主管顯示名稱</label>
+          <input id="loginAdminAccount" type="text" class="input mono" value="Jun Liu" placeholder="Jun Liu" />
         </div>
         <div>
-          <label class="label">管理員通行碼（預設：0568）</label>
-          <input id="loginAdminPin" type="password" class="input mono" placeholder="請輸入通行碼（預設 0568）" onkeydown="if(event.key==='Enter')submitAdminLogin()" />
+          <label class="label">主管切換碼（4 碼數字，預設 0568）</label>
+          <input id="loginAdminPin" type="text" inputmode="numeric" maxlength="8" autocomplete="off" class="input mono" placeholder="請輸入 4 碼數字（預設 0568）" onkeydown="if(event.key==='Enter')submitAdminLogin()" />
         </div>
-        <button type="button" class="btn btn-primary w-full py-2.5 text-sm" onclick="submitAdminLogin()">👑 驗證並以管理員身分登入</button>
+        <button type="button" class="btn btn-primary w-full py-2.5 text-sm" onclick="submitAdminLogin()">👑 切換為主管派單模式</button>
       </div>
     </div>
   </div>
