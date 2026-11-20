@@ -646,9 +646,16 @@
       <span id="syncDot" class="dot" style="background:#64748b"></span><span id="syncText" class="text-[12px] muted">連線中…</span>
     </button>
 
-    <select class="userSelect input !w-auto !py-1.5 hidden lg:block max-w-[220px]" onchange="setUser(this.value)"></select>
+    <!-- 目前登入者帳號膠囊（直接顯示登入者名字，點擊可切換或登出） -->
+    <button id="topUserPill" type="button" onclick="openLoginModal(true)" class="chip cursor-pointer !py-1 !pl-1.5 !pr-2.5 hover:border-sky-400 transition" title="目前登入帳號（點擊切換使用者或登出）">
+      <span id="topUserAvatar" class="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0" style="background:linear-gradient(135deg,#0a84ff,#5e5ce6)">?</span>
+      <span class="flex flex-col items-start leading-tight max-w-[130px]">
+        <span id="topUserName" class="text-[12px] font-bold truncate">請先登入</span>
+        <span id="topUserSub" class="text-[9.5px] faint truncate hidden sm:block">點擊登入帳號</span>
+      </span>
+      <span class="text-[10px] faint ml-0.5">▾</span>
+    </button>
 
-    <button class="btn btn-sm hidden sm:inline-flex" onclick="copyShareCloudUrl()" title="複製同仁可開啟的雲端網址（請勿複製網址列的 file:// 本機路徑）">🔗 分享給同仁</button>
     <button class="btn btn-sm" onclick="toggleTheme()" title="切換深色 / 淺色"><span id="themeIcon">🌙</span></button>
     <button class="btn btn-primary hidden md:inline-flex" onclick="openTaskModal()">＋ 新增任務 <kbd class="!border-white/40 !text-white/80">N</kbd></button>
   </div>
@@ -699,7 +706,7 @@
           <option value="low">⚪ 低</option>
         </select>
         <button class="btn btn-sm" onclick="clearFilters()">清除</button>
-        <select class="userSelect input !w-auto lg:hidden" onchange="setUser(this.value)"></select>
+        
         <div class="flex-1"></div>
         <button id="toggleArchiveColBtn" class="btn btn-sm" onclick="toggleArchiveCol()" title="顯示或隱藏歷史歸檔欄">📦 隱藏歸檔欄</button>
         <span id="boardSummary" class="text-xs faint mono"></span>
@@ -1225,6 +1232,83 @@
           <input id="notifyEmailInput" class="input flex-1 mono" placeholder="輸入收件人 Email（多人以逗號分隔，會自動記憶）" />
           <button id="btnSendEmail" class="btn" onclick="sendCloudEmailNotice()">📨 發送 Email</button>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== macOS 帳號登入與身分切換 Modal ===================== -->
+<div id="loginModal" class="fixed inset-0 z-[90] hidden items-center justify-center p-3 sm:p-6" style="background:rgba(0,0,0,.66);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)">
+  <div class="w-full max-w-lg flex flex-col rounded-2xl overflow-hidden mac-window fade-in">
+    <div class="px-4 sm:px-5 py-3 flex items-center justify-between mac-titlebar">
+      <div class="flex items-center gap-2.5">
+        <div class="mac-lights">
+          <span id="loginCloseDot" class="mac-light close" onclick="closeLoginModal()" title="關閉"></span>
+          <span class="mac-light minimize"></span>
+          <span class="mac-light zoom"></span>
+        </div>
+        <span class="code c-on">ACCOUNT</span>
+        <h3 class="font-bold text-[14px]">👤 帳號登入｜任務派遣中心</h3>
+      </div>
+      <button id="loginCloseBtn" type="button" class="btn btn-sm hidden" onclick="closeLoginModal()">關閉</button>
+    </div>
+
+    <div class="p-4 sm:p-5 space-y-4 max-h-[82vh] overflow-y-auto scroll-x">
+      <!-- 頂部歡迎頭像與目前狀態 -->
+      <div class="flex items-center justify-between gap-3 rounded-xl p-3 border" style="border-color:var(--border);background:var(--panel2)">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="mac-app-icon !w-10 !h-10 !text-base shrink-0">派</div>
+          <div class="min-w-0">
+            <div class="font-bold text-sm">請選擇或輸入您的個人帳號登入</div>
+            <div class="text-[11px] muted">登入後系統上方將直接顯示您的名字，並自動篩選您的待接單任務</div>
+          </div>
+        </div>
+        <button id="btnLogoutCurrent" type="button" class="btn btn-sm btn-danger hidden shrink-0" onclick="logoutUser()">🚪 登出</button>
+      </div>
+
+      <!-- 模式切換：同仁帳號 / 管理員登入 -->
+      <div class="mac-seg-bar w-full grid grid-cols-2 text-center">
+        <button id="loginTabMember" type="button" class="tab active" onclick="switchLoginTab('member')">👤 同仁帳號登入</button>
+        <button id="loginTabAdmin" type="button" class="tab" onclick="switchLoginTab('admin')">👑 管理員登入</button>
+      </div>
+
+      <!-- 面板 A：同仁帳號登入 -->
+      <div id="loginPanelMember" class="space-y-3">
+        <!-- 搜尋或直接輸入姓名/帳號 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div>
+            <label class="label">您的姓名（顯示於系統上方）*</label>
+            <input id="loginMemberName" class="input" placeholder="點選下方名單，或直接輸入姓名…" oninput="filterLoginMembers()" />
+          </div>
+          <div>
+            <label class="label">個人帳號 / Email（選填，用於識別）</label>
+            <input id="loginMemberAccount" class="input mono" placeholder="例：name@company.com 或英文名" />
+          </div>
+        </div>
+
+        <!-- 班表同仁一鍵點選清單 -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold muted">📋 快速點選班表人員（點擊即帶入姓名）</span>
+            <span id="loginMemberCount" class="text-[11px] faint mono"></span>
+          </div>
+          <div id="loginMemberGrid" class="space-y-2.5 max-h-52 overflow-y-auto scroll-x pr-1"></div>
+        </div>
+
+        <button type="button" class="btn btn-primary w-full py-2.5 text-sm" onclick="submitMemberLogin()">🔓 以此帳號登入並記住此裝置</button>
+      </div>
+
+      <!-- 面板 B：管理員登入 -->
+      <div id="loginPanelAdmin" class="hidden space-y-3">
+        <div>
+          <label class="label">管理員帳號 / Email</label>
+          <input id="loginAdminAccount" class="input mono" value="ljun0568@gmail.com" placeholder="ljun0568@gmail.com" />
+        </div>
+        <div>
+          <label class="label">管理員通行碼（預設：0568）</label>
+          <input id="loginAdminPin" type="password" class="input mono" placeholder="請輸入通行碼（預設 0568）" onkeydown="if(event.key==='Enter')submitAdminLogin()" />
+        </div>
+        <button type="button" class="btn btn-primary w-full py-2.5 text-sm" onclick="submitAdminLogin()">👑 驗證並以管理員身分登入</button>
       </div>
     </div>
   </div>
@@ -1813,14 +1897,211 @@ function renderAll() {
   renderTop(); renderAckBanner(); renderShift(); renderFilters(); renderBoard(); renderGantt(); renderSchedule(); renderPortfolio(); renderHistory();
 }
 
+
+// ============================================================================
+// 👤 帳號登入與系統上方使用者顯示（記住於本機裝置，支援 GitHub Pages）
+// ============================================================================
+const AUTH_LS_KEY = 'TD_AUTH_USER_V1';
+const ADMIN_PIN = '0568';
+let selectedLoginOrg = '';
+
+function loadSavedAuth() {
+  try {
+    const raw = localStorage.getItem(AUTH_LS_KEY);
+    if (!raw) return null;
+    const u = JSON.parse(raw);
+    if (u && u.name) return u;
+  } catch (e) {}
+  return null;
+}
+
+function saveAuthUser(u) {
+  ui.user = u;
+  try { localStorage.setItem(AUTH_LS_KEY, JSON.stringify(u)); } catch (e) {}
+  renderTopUserBadge();
+  renderAll();
+}
+
+function renderTopUserBadge() {
+  const avatar = document.getElementById('topUserAvatar');
+  const nameEl = document.getElementById('topUserName');
+  const subEl = document.getElementById('topUserSub');
+  if (!nameEl) return;
+
+  const authed = loadSavedAuth();
+  if (!authed && !ui.user.authed) {
+    if (avatar) { avatar.textContent = '?'; avatar.style.background = 'linear-gradient(135deg,#64748b,#475569)'; }
+    nameEl.textContent = '請先登入';
+    if (subEl) subEl.textContent = '點擊選擇帳號';
+    return;
+  }
+
+  const u = ui.user;
+  const shortLabel = u.role === 'admin' ? 'Jun Liu' : (u.member || u.name.replace(/（成員）$/, ''));
+  if (avatar) {
+    avatar.textContent = u.role === 'admin' ? '👑' : (shortLabel.slice(0, 1) || '👤');
+    avatar.style.background = u.role === 'admin'
+      ? 'linear-gradient(135deg,#f59e0b,#ea580c)'
+      : 'linear-gradient(135deg,#30d158,#0a84ff)';
+  }
+  nameEl.textContent = shortLabel;
+  if (subEl) {
+    subEl.textContent = u.role === 'admin'
+      ? '管理員 · ' + (u.account || 'ljun0568')
+      : (u.account ? u.account : (u.orgName ? u.orgName + ' · 已登入' : '成員 · 已登入'));
+  }
+}
+
+function switchLoginTab(mode) {
+  document.getElementById('loginTabMember')?.classList.toggle('active', mode === 'member');
+  document.getElementById('loginTabAdmin')?.classList.toggle('active', mode === 'admin');
+  document.getElementById('loginPanelMember')?.classList.toggle('hidden', mode !== 'member');
+  document.getElementById('loginPanelAdmin')?.classList.toggle('hidden', mode !== 'admin');
+  if (mode === 'admin') setTimeout(() => document.getElementById('loginAdminPin')?.focus(), 50);
+}
+
+function renderLoginMembers() {
+  const grid = document.getElementById('loginMemberGrid');
+  const cntEl = document.getElementById('loginMemberCount');
+  if (!grid) return;
+  const kw = (document.getElementById('loginMemberName')?.value || '').trim().toLowerCase();
+  let total = 0;
+
+  const blocks = state.organizations.map(org => {
+    const members = (org.shiftData?.members || []).filter(m => !kw || m.toLowerCase().includes(kw));
+    total += members.length;
+    if (!members.length) return '';
+    return `<div class="rounded-xl p-2.5 border" style="border-color:var(--border);background:var(--panel2)">
+      <div class="flex items-center gap-1.5 text-[11px] font-bold mb-2">
+        <span class="dot" style="background:${h(org.color)}"></span>
+        <span>${h(org.name)}</span>
+        <span class="faint mono">(${members.length} 人)</span>
+      </div>
+      <div class="flex flex-wrap gap-1.5">
+        ${members.map(m => {
+          const isCur = ui.user.member === m;
+          return `<button type="button" onclick="pickLoginMember('${js(m)}','${js(org.name)}')"
+            class="chip !py-1 !px-2.5 cursor-pointer hover:border-sky-400 transition ${isCur ? '!border-sky-400 font-bold accent' : ''}"
+            style="${isCur ? 'background:var(--accent-soft)' : ''}">
+            <span>👤</span><span>${h(m)}</span>${isCur ? '<span class="text-[10px]">✔</span>' : ''}
+          </button>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).filter(Boolean);
+
+  if (cntEl) cntEl.textContent = total ? `共 ${total} 位班表成員` : '班表載入中…（可直接輸入姓名登入）';
+  grid.innerHTML = blocks.join('') || `<div class="text-xs faint py-3 text-center">無符合名單，您可直接於上方輸入姓名並登入</div>`;
+}
+
+function filterLoginMembers() {
+  renderLoginMembers();
+}
+
+function pickLoginMember(memberName, orgName) {
+  selectedLoginOrg = orgName || '';
+  const nameInput = document.getElementById('loginMemberName');
+  if (nameInput) nameInput.value = memberName;
+  renderLoginMembers();
+}
+
+function openLoginModal(allowClose = true) {
+  const m = document.getElementById('loginModal');
+  if (!m) return;
+  const hasAuth = Boolean(loadSavedAuth() || ui.user.authed);
+  const canClose = allowClose && hasAuth;
+  document.getElementById('loginCloseBtn')?.classList.toggle('hidden', !canClose);
+  document.getElementById('loginCloseDot')?.classList.toggle('opacity-40', !canClose);
+  document.getElementById('btnLogoutCurrent')?.classList.toggle('hidden', !hasAuth);
+
+  if (ui.user.role === 'member' && ui.user.member) {
+    document.getElementById('loginMemberName').value = ui.user.member;
+    document.getElementById('loginMemberAccount').value = ui.user.account || '';
+    switchLoginTab('member');
+  } else if (hasAuth && ui.user.role === 'admin') {
+    switchLoginTab('admin');
+  } else {
+    switchLoginTab('member');
+  }
+  renderLoginMembers();
+  m.classList.remove('hidden');
+  m.classList.add('flex');
+}
+
+function closeLoginModal() {
+  if (!loadSavedAuth() && !ui.user.authed) return;
+  const m = document.getElementById('loginModal');
+  if (m) { m.classList.add('hidden'); m.classList.remove('flex'); }
+}
+
+function submitMemberLogin() {
+  const name = (document.getElementById('loginMemberName')?.value || '').trim();
+  const account = (document.getElementById('loginMemberAccount')?.value || '').trim();
+  if (!name) {
+    toast('請先點選或輸入您的姓名', 'warning');
+    document.getElementById('loginMemberName')?.focus();
+    return;
+  }
+  let orgName = selectedLoginOrg;
+  if (!orgName) {
+    for (const o of state.organizations) {
+      if ((o.shiftData?.members || []).includes(name)) { orgName = o.name; break; }
+    }
+  }
+  const userObj = {
+    role: 'member',
+    member: name,
+    name: account ? `${name} (${account})` : `${name}（成員）`,
+    account,
+    orgName: orgName || '團隊成員',
+    authed: true,
+    loginAt: nowStr(),
+  };
+  saveAuthUser(userObj);
+  closeLoginModal();
+  toast(`👋 歡迎回來，${name}！已登入並記住您的帳號`, 'success');
+}
+
+function submitAdminLogin() {
+  const acc = (document.getElementById('loginAdminAccount')?.value || '').trim() || 'ljun0568@gmail.com';
+  const pin = (document.getElementById('loginAdminPin')?.value || '').trim();
+  if (pin !== ADMIN_PIN && pin !== 'ljun0568@gmail.com') {
+    toast('通行碼不正確（預設為 0568）', 'error');
+    document.getElementById('loginAdminPin')?.focus();
+    return;
+  }
+  const userObj = {
+    role: 'admin',
+    member: null,
+    name: ADMIN_NAME,
+    account: acc,
+    orgName: '管理員',
+    authed: true,
+    loginAt: nowStr(),
+  };
+  document.getElementById('loginAdminPin').value = '';
+  saveAuthUser(userObj);
+  closeLoginModal();
+  toast('👑 管理員登入成功！', 'success');
+}
+
+function logoutUser() {
+  try { localStorage.removeItem(AUTH_LS_KEY); } catch (e) {}
+  ui.user = { role: 'guest', name: '未登入', member: null, authed: false };
+  renderTopUserBadge();
+  document.getElementById('loginMemberName').value = '';
+  document.getElementById('loginMemberAccount').value = '';
+  openLoginModal(false);
+  toast('已登出帳號，請重新登入', 'info');
+}
+
 function renderTop() {
   const sel = state.selectedDate;
   document.getElementById('dateSelect').innerHTML = allDates().map(d => {
     const w = weekdayOf(d); return `<option value="${h(d)}" ${d === sel ? 'selected' : ''}>${h(d)}${w ? ' (' + h(w) + ')' : ''}${d === todayKey() ? ' • 今天' : ''}</option>`;
   }).join('');
-  const opts = [`<option value="admin::${h(ADMIN_NAME)}" ${ui.user.role === 'admin' ? 'selected' : ''}>👑 ${h(ADMIN_NAME)}</option>`];
-  state.organizations.forEach(o => o.shiftData.members.forEach(m => opts.push(`<option value="member::${h(m)}" ${ui.user.member === m ? 'selected' : ''}>👤 ${h(m)}（${h(o.name)}）</option>`)));
-  document.querySelectorAll('.userSelect').forEach(s => s.innerHTML = opts.join(''));
+  renderTopUserBadge();
+  if (!document.getElementById('loginModal')?.classList.contains('hidden')) renderLoginMembers();
   document.getElementById('sheetLink1').href = CLOUD_SHEET_URL;
   document.getElementById('sheetLink2').href = CLOUD_SHEET_URL;
 }
@@ -3137,7 +3418,8 @@ function saveStaffEmails(map) {
 }
 
 function buildDirectTaskUrl(t) {
-  const base = GAS_WEB_APP_URL;
+  const isWebHosted = /^https?:$/i.test(window.location.protocol) && !/googleusercontent\.com/i.test(window.location.hostname);
+  const base = isWebHosted ? (window.location.origin + window.location.pathname) : GAS_WEB_APP_URL;
   const firstMember = (t.assignees || [])[0] || '';
   return `${base}?user=${encodeURIComponent(firstMember)}&task=${encodeURIComponent(t.id)}`;
 }
@@ -4130,10 +4412,29 @@ window.addEventListener('DOMContentLoaded', async () => {
     const initP = window.__INITIAL_PARAMS__ || {};
     const uParam = params.get('user') || initP.user || '';
     const tParam = params.get('task') || initP.task || '';
+    const savedAuth = loadSavedAuth();
     if (uParam) {
-      ui.user = { role: 'member', name: uParam + '（成員）', member: uParam };
+      let foundOrg = '';
+      for (const o of state.organizations) {
+        if ((o.shiftData?.members || []).includes(uParam)) { foundOrg = o.name; break; }
+      }
+      saveAuthUser({
+        role: 'member',
+        member: uParam,
+        name: uParam + '（成員）',
+        account: '',
+        orgName: foundOrg || '團隊成員',
+        authed: true,
+        loginAt: nowStr(),
+      });
+      toast(`👋 歡迎 ${uParam}！已自動以您的帳號登入並篩選待接單任務`, 'success');
+    } else if (savedAuth) {
+      ui.user = { ...savedAuth, authed: true };
       renderAll();
-      toast(`👋 歡迎 ${uParam}！已為您篩選待確認接單任務`, 'info');
+    } else {
+      ui.user = { role: 'guest', name: '未登入', member: null, authed: false };
+      renderTopUserBadge();
+      openLoginModal(false);
     }
     if (tParam && state.tasks.some(x => x.id === tParam)) {
       openTaskModal(tParam);
