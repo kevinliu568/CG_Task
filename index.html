@@ -3957,12 +3957,29 @@ function getFilteredPortfolioVideos() {
 function setPortfolioAuthor(a) {
   portfolioState.author = a;
   portfolioState.visibleLimit = 48;
+  // 若目前有選特定類別，但該作者在該類別下沒有作品，自動切回「全部類別」以顯示該作者全部作品
+  if (a !== 'all' && portfolioState.category !== 'all') {
+    const hasInCat = portfolioState.videos.some(v =>
+      v.category === portfolioState.category &&
+      ((v.authors || [v.author]).includes(a) || (v.members || [v.member]).includes(a))
+    );
+    if (!hasInCat) portfolioState.category = 'all';
+  }
   renderPortfolio();
 }
 
 function setPortfolioCategory(c) {
   portfolioState.category = c;
   portfolioState.visibleLimit = 48;
+  // 若目前有選特定作者，但該作者在該類別下沒有作品，自動切回「全部人員」以顯示該類別全部作品
+  if (c !== 'all' && portfolioState.author !== 'all') {
+    const a = portfolioState.author;
+    const hasInCat = portfolioState.videos.some(v =>
+      v.category === c &&
+      ((v.authors || [v.author]).includes(a) || (v.members || [v.member]).includes(a))
+    );
+    if (!hasInCat) portfolioState.author = 'all';
+  }
   renderPortfolio();
 }
 
@@ -4062,7 +4079,8 @@ function renderPortfolio() {
       }
       const orgToUse = foundOrg || state.organizations[0];
       const s = foundOrg ? shiftOf(foundOrg.id, shortM, d) : null;
-      const rem = foundOrg ? memberDayRemainingHours(foundOrg.id, shortM, d) : null;
+      const cap = foundOrg ? memberDayCapacity(foundOrg.id, shortM, d) : null;
+      const rem = cap ? cap.freeHours : 0;
       const activeCnt = activeCount(shortM);
       authorBar.classList.remove('hidden');
       authorBar.innerHTML = `
