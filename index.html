@@ -2,7 +2,12 @@
 <html lang="zh-TW" data-theme="dark">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="任務派遣中心" />
+<meta name="theme-color" content="#0b0d14" />
 <title>任務派遣中心｜Daily 班表 × 虛擬班表</title>
 <script>
   try { document.documentElement.dataset.theme = localStorage.getItem('TD_THEME') || 'dark'; } catch (e) {}
@@ -602,6 +607,35 @@
     margin-top: 1px;
   }
 
+  /* 📱 手機版專屬最佳化 (iPhone / Android / LINE 內建瀏覽器) */
+  .scroll-x { -webkit-overflow-scrolling: touch; }
+  @media (max-width: 767px) {
+    html, body { overflow-x: hidden; }
+    .panel { border-radius: 14px; }
+    .card { padding: 10px 11px; }
+    .btn { min-height: 34px; }
+    .input, select.input, textarea.input { font-size: 14px; }
+    #macCalPop {
+      left: 50% !important;
+      top: 50% !important;
+      transform: translate(-50%, -50%) !important;
+      width: min(328px, calc(100vw - 24px)) !important;
+      max-height: 85dvh;
+      overflow-y: auto;
+    }
+    #pAuthorPills, #pCategoryPills {
+      flex-wrap: nowrap !important;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    #pAuthorPills::-webkit-scrollbar, #pCategoryPills::-webkit-scrollbar { display: none; }
+    .mac-dock {
+      padding-bottom: max(4px, env(safe-area-inset-bottom));
+    }
+  }
+
 </style>
 </head>
 <body>
@@ -609,7 +643,7 @@
 
 <!-- ===================== macOS 頂部視窗工具列 (Unified Titlebar & Toolbar) ===================== -->
 <header class="sticky top-0 z-30 border-b" style="border-color:var(--border-strong);background:color-mix(in srgb,var(--panel) 86%,transparent);backdrop-filter:blur(32px) saturate(190%);-webkit-backdrop-filter:blur(32px) saturate(190%);box-shadow:0 1px 0 rgba(255,255,255,.06) inset">
-  <div class="max-w-[1680px] mx-auto px-3 sm:px-5 h-14 flex items-center gap-2 sm:gap-3">
+  <div class="max-w-[1680px] mx-auto px-2.5 sm:px-5 h-14 flex items-center gap-1.5 sm:gap-3">
     <!-- macOS 紅黃綠視窗控制燈號 -->
     <div class="mac-lights hidden sm:inline-flex" title="macOS 視窗控制（綠燈可切換全螢幕）">
       <span class="mac-light close" onclick="switchTab('board')" title="返回看板首頁"></span>
@@ -635,25 +669,26 @@
 
     <div class="flex-1"></div>
 
-    <div class="flex items-center gap-0.5 rounded-xl px-1 py-1 border" style="border-color:var(--border);background:var(--panel2)">
-      <button class="btn btn-sm !border-0 !bg-transparent" onclick="stepDate(-1)" title="前一天">◀</button>
-      <select id="dateSelect" class="bg-transparent mono text-[13px] font-bold accent outline-none cursor-pointer px-1" onchange="setDate(this.value)"></select>
-      <button class="btn btn-sm !border-0 !bg-transparent" onclick="stepDate(1)" title="後一天">▶</button>
+    <div class="flex items-center gap-0.5 rounded-xl px-0.5 sm:px-1 py-0.5 sm:py-1 border shrink-0" style="border-color:var(--border);background:var(--panel2)">
+      <button class="btn btn-sm !px-1.5 !border-0 !bg-transparent" onclick="stepDate(-1)" title="前一天">◀</button>
+      <select id="dateSelect" class="bg-transparent mono text-[12px] sm:text-[13px] font-bold accent outline-none cursor-pointer px-0.5 sm:px-1 max-w-[106px] sm:max-w-none" onchange="setDate(this.value)"></select>
+      <button class="btn btn-sm !px-1.5 !border-0 !bg-transparent" onclick="stepDate(1)" title="後一天">▶</button>
       <button class="btn btn-sm !border-0 !bg-transparent hidden sm:inline-flex" onclick="jumpToday()" title="回到今天">今天</button>
     </div>
 
     <button id="syncPill" class="chip hidden sm:inline-flex cursor-pointer" onclick="loadFromCloud(true)" title="點擊立即同步">
       <span id="syncDot" class="dot" style="background:#64748b"></span><span id="syncText" class="text-[12px] muted">連線中…</span>
     </button>
+    <button type="button" class="btn btn-sm sm:hidden !px-2 shrink-0" onclick="loadFromCloud(true)" title="同步雲端資料"><span id="mSyncIcon">☁️</span></button>
 
     <!-- 目前登入者帳號膠囊（直接顯示登入者名字，點擊可切換或登出） -->
-    <button id="topUserPill" type="button" onclick="openLoginModal(true)" class="chip cursor-pointer !py-1 !pl-1.5 !pr-2.5 hover:border-sky-400 transition" title="目前登入帳號（點擊切換使用者或登出）">
+    <button id="topUserPill" type="button" onclick="openLoginModal(true)" class="chip cursor-pointer !py-1 !pl-1.5 !pr-2 sm:!pr-2.5 hover:border-sky-400 transition shrink-0" title="目前登入帳號（點擊切換使用者或登出）">
       <span id="topUserAvatar" class="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0" style="background:linear-gradient(135deg,#0a84ff,#5e5ce6)">?</span>
-      <span class="flex flex-col items-start leading-tight max-w-[130px]">
-        <span id="topUserName" class="text-[12px] font-bold truncate">請先登入</span>
+      <span class="flex flex-col items-start leading-tight max-w-[68px] sm:max-w-[130px]">
+        <span id="topUserName" class="text-[11.5px] sm:text-[12px] font-bold truncate">請先登入</span>
         <span id="topUserSub" class="text-[9.5px] faint truncate hidden sm:block">點擊登入帳號</span>
       </span>
-      <span class="text-[10px] faint ml-0.5">▾</span>
+      <span class="text-[10px] faint ml-0.5 hidden sm:inline">▾</span>
     </button>
 
     <button class="btn btn-sm" onclick="toggleTheme()" title="切換深色 / 淺色"><span id="themeIcon">🌙</span></button>
@@ -676,11 +711,12 @@
           <span class="hidden sm:inline text-xs faint">點擊人員即可直接派工</span>
         </div>
         <div class="flex items-center gap-1.5 flex-wrap text-[11px]">
-          <span class="code c-weather">0500 氣象</span>
-          <span class="code c-star">★ rundown</span>
-          <span class="code c-key">關鍵</span>
-          <span class="code c-on">當班</span>
-          <span class="code c-off">休假</span>
+          <span class="code c-weather hidden sm:inline">0500 氣象</span>
+          <span class="code c-star hidden sm:inline">★ rundown</span>
+          <span class="code c-key hidden sm:inline">關鍵</span>
+          <span class="code c-on hidden sm:inline">當班</span>
+          <span class="code c-off hidden sm:inline">休假</span>
+          <span id="mobileShiftSummary" class="text-[11px] muted mono sm:hidden"></span>
           <button id="shiftToggleBtn" class="btn btn-sm ml-1" onclick="toggleShift()">收合 ▲</button>
         </div>
       </div>
@@ -715,6 +751,9 @@
       <!-- 發單單位一鍵篩選列 -->
       <div id="unitQuickBar" class="flex items-center gap-1.5 overflow-x-auto scroll-x pt-1 text-xs"></div>
     </div>
+
+    <!-- 手機版一鍵切換單欄全寬看板列 -->
+    <div id="mobileColTabs" class="md:hidden flex items-center gap-1.5 overflow-x-auto scroll-x pb-0.5"></div>
 
     <div id="board" class="flex gap-3 overflow-x-auto scroll-x pb-3 items-start snap-x snap-mandatory md:snap-none"></div>
   </section>
@@ -1393,7 +1432,7 @@ const tabCache = {};
 
 const ui = {
   tab: 'board', histTab: 'tasks', user: { role: 'admin', name: ADMIN_NAME, member: null },
-  shiftCollapsed: false, hideArchiveCol: false, booted: false, syncing: false, saving: false, pendingSave: false,
+  shiftCollapsed: (typeof window !== 'undefined' && window.innerWidth < 768), mobileCol: 'all', hideArchiveCol: false, booted: false, syncing: false, saving: false, pendingSave: false,
   lastSyncAt: null, cloudStamp: '', dragId: null, dragOverId: null, dragPos: 'after', syncError: false,
 };
 const modal = { assignees: new Set(), checklist: [], comments: [], requesterUnit: '' };
@@ -2111,6 +2150,18 @@ function renderTop() {
 function renderShift() {
   const body = document.getElementById('shiftBody'), sel = state.selectedDate, w = weekdayOf(sel);
   document.getElementById('shiftDateBadge').textContent = `${sel}${w ? ' 週' + w : ''}`;
+  body.classList.toggle('hidden', ui.shiftCollapsed);
+  const toggleBtn = document.getElementById('shiftToggleBtn');
+  if (toggleBtn) toggleBtn.textContent = ui.shiftCollapsed ? '展開 ▼' : '收合 ▲';
+  const mSum = document.getElementById('mobileShiftSummary');
+  if (mSum) {
+    const parts = state.organizations.map(o => {
+      const day = (o.shiftData && o.shiftData.schedule && o.shiftData.schedule[sel]) || {};
+      const cnt = (o.shiftData?.members || []).filter(m => day[m] && day[m].onDuty).length;
+      return `${o.name.replace(' 班表', '').replace('班表', '')} ${cnt}人`;
+    });
+    mSum.textContent = parts.join(' · ');
+  }
   if (!ui.booted && !state.organizations.some(o => o.shiftData.members.length)) {
     body.innerHTML = [0, 1].map(() => `<div class="rounded-xl border p-4 space-y-3" style="border-color:var(--border)"><div class="skeleton h-5 w-40"></div><div class="skeleton h-8"></div><div class="skeleton h-8 w-3/4"></div></div>`).join('');
     return;
@@ -2247,6 +2298,11 @@ function filteredTasks() {
   });
 }
 
+function setMobileCol(colId) {
+  ui.mobileCol = colId;
+  renderBoard();
+}
+
 function renderBoard() {
   const board = document.getElementById('board');
   if (!ui.booted && !state.tasks.length) {
@@ -2257,11 +2313,29 @@ function renderBoard() {
   const cols = state.columns.filter(c => !(ui.hideArchiveCol && c.id === 'archived'));
   document.getElementById('boardSummary').textContent = `${list.length} / ${state.tasks.length} 項`;
 
-  board.innerHTML = cols.map((col, ci) => {
+  const mTabs = document.getElementById('mobileColTabs');
+  const isMobile = window.innerWidth < 768;
+  if (mTabs) {
+    const allActive = ui.mobileCol === 'all';
+    mTabs.innerHTML = [
+      `<button type="button" onclick="setMobileCol('all')" class="unit-pill shrink-0 ${allActive ? 'active' : ''}" style="${allActive ? 'background:var(--accent-soft);color:var(--accent);border-color:var(--accent)' : ''}">📋 全部 <span class="mono opacity-75">(${list.length})</span></button>`,
+      ...cols.map(col => {
+        const cnt = list.filter(t => t.status === col.id).length;
+        const active = ui.mobileCol === col.id;
+        return `<button type="button" onclick="setMobileCol('${js(col.id)}')" class="unit-pill shrink-0 ${active ? 'active' : ''}" style="${active ? `background:${col.color}22;color:${col.color};border-color:${col.color}` : ''}"><span class="dot" style="background:${col.color}"></span>${h(col.title)} <span class="mono opacity-75">(${cnt})</span></button>`;
+      })
+    ].join('');
+  }
+
+  const renderCols = (isMobile && ui.mobileCol !== 'all') ? cols.filter(c => c.id === ui.mobileCol) : cols;
+  const singleMobileMode = isMobile && ui.mobileCol !== 'all';
+
+  board.innerHTML = renderCols.map((col, ci) => {
+    const origCi = cols.findIndex(c => c.id === col.id);
     const items = list.filter(t => t.status === col.id).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
-    const cards = items.map((t, idx) => cardHtml(t, ci, sel, idx, items.length)).join('') ||
+    const cards = items.map((t, idx) => cardHtml(t, origCi >= 0 ? origCi : ci, sel, idx, items.length)).join('') ||
       `<div class="text-center py-10 text-xs faint border border-dashed rounded-xl" style="border-color:var(--border-strong)">拖曳卡牌到此欄，或上下拖拉調整順序</div>`;
-    return `<div class="col w-[85vw] sm:w-[310px] xl:flex-1 shrink-0 p-2.5 snap-start flex flex-col gap-2.5"
+    return `<div class="col ${singleMobileMode ? 'w-full' : 'w-[86vw] sm:w-[310px] xl:flex-1'} shrink-0 p-2.5 snap-start flex flex-col gap-2.5"
               ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'${js(col.id)}')">
       <div class="flex items-center justify-between px-1 pt-0.5">
         <div class="flex items-center gap-2"><span class="dot" style="background:${col.color}"></span>
@@ -4460,6 +4534,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   setInterval(silentCheck, AUTO_SYNC_MS);
   setInterval(refreshSyncText, 10000);
   window.addEventListener('focus', silentCheck);
+  window.addEventListener('resize', () => { if (ui.tab === 'board') renderBoard(); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) silentCheck(); });
 });
 </script>
